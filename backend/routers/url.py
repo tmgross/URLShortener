@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from database.firebase import db
+from firebase_admin import firestore
 from services.url_shortener import generate_hash, generate_custom_alias
 
 router = APIRouter()
@@ -20,7 +21,7 @@ async def shorten_url(data: URLInput):
 
     db.collection("urls").document(shortened_url).set({
         "original_url": data.url,
-        "created_at": db.SERVER_TIMESTAMP
+        "created_at": firestore.SERVER_TIMESTAMP
     })
     
     return {"shortened_url": shortened_url}
