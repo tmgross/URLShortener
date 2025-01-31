@@ -14,10 +14,11 @@ async def redirect_to_original(code: str):
         raise HTTPException(status_code=404, detail="Shortened URL not found")
     
     original_url = doc.to_dict().get("original_url")
-    
-    db.collection("urls").document(code).collection("analytics").add({
-        "timestamp": firestore.SERVER_TIMESTAMP,
-    })
-    
-    # Redirect to the original URL
+
+    clicks_doc_ref = db.collection("urls").document(code).collection("analytics").document("clicks")
+
+    clicks_doc_ref.set({
+        "num": firestore.Increment(1)
+    }, merge=True)
+
     return RedirectResponse(url=original_url)
