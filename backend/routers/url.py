@@ -9,6 +9,8 @@ router = APIRouter()
 class URLInput(BaseModel):
     url: str
     custom_alias: str = None
+    salt: str = None
+    hash: str = None
 
 @router.post("/shorten")
 async def shorten_url(data: URLInput):
@@ -21,7 +23,9 @@ async def shorten_url(data: URLInput):
 
     db.collection("urls").document(shortened_url).set({
         "original_url": data.url,
-        "created_at": firestore.SERVER_TIMESTAMP
+        "created_at": firestore.SERVER_TIMESTAMP,
+        "salt": data.salt,
+        "hash": data.hash
     })
     
     return {"shortened_url": shortened_url}

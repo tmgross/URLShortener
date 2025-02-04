@@ -12,3 +12,15 @@ def delete_old_urls():
     
     for doc in old_urls:
         doc.reference.delete()
+
+def get_salt(url: str) -> str:
+    doc = db.collection("urls").document(url).get()
+    if doc.exists:
+        return doc.to_dict().get("salt")
+    return None
+
+def get_hash(url: str) -> str:
+    doc = db.collection("urls").document(url).get()
+    if doc.exists:
+        return doc.to_dict().get("hash")
+    return None
