@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import RedirectResponse
 from database.firebase import db
 from firebase_admin import firestore
 
@@ -21,4 +20,4 @@ async def redirect_to_original(code: str):
         "num": firestore.Increment(1)
     }, merge=True)
 
-    return RedirectResponse(url=original_url)
+    return {"url": original_url}
