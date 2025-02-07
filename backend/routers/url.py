@@ -21,6 +21,16 @@ async def shorten_url(data: URLInput):
     else:
         shortened_url = generate_hash(data.url)
 
+    if not (data.url.startswith("http://") or data.url.startswith("https://")):
+        data.url = "http://" + data.url
+    
+    # Check if the URL contains 'www.' if not, add it after the protocol
+    if "://" in data.url:
+        protocol_end = data.url.index("://") + 3
+        domain_start = data.url[protocol_end:]
+        if not domain_start.startswith("www."):
+            data.url = data.url[:protocol_end] + "www." + domain_start
+
     db.collection("urls").document(shortened_url).set({
         "original_url": data.url,
         "created_at": firestore.SERVER_TIMESTAMP,
