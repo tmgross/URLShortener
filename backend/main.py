@@ -13,7 +13,7 @@ app.add_middleware(
 )
 
 app.include_router(url.router, prefix="/url", tags=["URL Shortening"])
-# app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
+app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 app.include_router(services.router, tags=["Services"])
 app.include_router(redirect.router, tags=["Redirect"])
 
