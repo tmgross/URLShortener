@@ -11,6 +11,7 @@ class URLInput(BaseModel):
     custom_alias: str = None
     salt: str = None
     hash: str = None
+    uid: str = None
 
 @router.post("/shorten")
 async def shorten_url(data: URLInput):
@@ -30,6 +31,11 @@ async def shorten_url(data: URLInput):
         domain_start = data.url[protocol_end:]
         if not domain_start.startswith("www."):
             data.url = data.url[:protocol_end] + "www." + domain_start
+
+    if data.uid:
+        db.collection("users").document(data.uid).update({
+        "urls": firestore.ArrayUnion([shortened_url])
+    })
 
     db.collection("urls").document(shortened_url).set({
         "original_url": data.url,
