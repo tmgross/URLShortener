@@ -4,6 +4,18 @@ from collections import defaultdict
 
 router = APIRouter()
 
+@router.get("/{uid}/urls")
+async def get_user_urls(uid: str):
+    user_ref = db.collection("users").document(uid)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_data = user_doc.to_dict()
+    urls = user_data.get("urls", [])
+    return {"urls": urls}
+
 @router.get("/{code}/referrers")
 async def get_refferer_counts(code: str):
     """Get a dictionary of all referrers and their counts."""
