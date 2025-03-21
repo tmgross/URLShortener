@@ -3,7 +3,6 @@ from database.firebase import db
 from collections import defaultdict
 
 router = APIRouter()
-
 @router.get("/{uid}/urls")
 async def get_user_urls(uid: str):
     user_ref = db.collection("users").document(uid)
@@ -12,9 +11,15 @@ async def get_user_urls(uid: str):
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
     
-    user_data = user_doc.to_dict()
-    urls = user_data.get("urls", [])
-    return {"urls": urls}
+    urls_ref = user_ref.collection("urls")
+    docs = urls_ref.stream()
+
+    urls_dict = {}
+    for doc in docs:
+        doc_data = doc.to_dict()
+        urls_dict[doc.id] = doc_data.get("urls", [])
+
+    return {"groups": urls_dict}
 
 @router.get("/{code}/referrers")
 async def get_refferer_counts(code: str):

@@ -12,6 +12,8 @@ class URLInput(BaseModel):
     salt: str = None
     hash: str = None
     uid: str = None
+    group: str = None
+    description: str = None
 
 @router.post("/shorten")
 async def shorten_url(data: URLInput):
@@ -33,15 +35,22 @@ async def shorten_url(data: URLInput):
             data.url = data.url[:protocol_end] + "www." + domain_start
 
     if data.uid:
-        db.collection("users").document(data.uid).update({
-        "urls": firestore.ArrayUnion([shortened_url])
-    })
+        if data.group:
+            db.collection("users").document(data.uid).collection("urls").document(data.group).set({
+                "urls": firestore.ArrayUnion([shortened_url])
+            }, merge=True)
+        else:
+            db.collection("users").document(data.uid).collection("urls").document("default").set({
+            "urls": firestore.ArrayUnion([shortened_url])
+            }, merge=True)
+
 
     db.collection("urls").document(shortened_url).set({
         "original_url": data.url,
         "created_at": firestore.SERVER_TIMESTAMP,
         "salt": data.salt,
-        "hash": data.hash
+        "hash": data.hash,
+        "description": data.description
     })
     
     return {"shortened_url": shortened_url}
