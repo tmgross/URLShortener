@@ -23,6 +23,19 @@ async def fetch_hash(code: str):
         return {"password_hash": None}
     return {"password_hash": password_hash}
 
+@router.get("/{code}/url")
+async def fetch_url(code: str):
+    """Fetch the original URL associated with the shortened URL."""
+    doc = db.collection("urls").document(code).get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Shortened URL not found")
+    
+    original_url = doc.to_dict().get("original_url")
+    if not original_url:
+        raise HTTPException(status_code=404, detail="Original URL not found")
+    
+    return {"url": original_url}
+
 
 # TODO: figure out where to store images, and update this path
 pdf_path = "temp"
