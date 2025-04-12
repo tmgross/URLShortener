@@ -1,18 +1,21 @@
 from fastapi import APIRouter, HTTPException, Request
 from database.firebase import db
 from firebase_admin import firestore
+from services.utils import log_api_call
 
 router = APIRouter()
 
+
 @router.get("/{code}")
 async def redirect_to_original(code: str, request: Request):
+    log_api_call("redicrect_to_original", code, request)
     """Redirect to the original URL based on the shortened code."""
     doc_ref = db.collection("urls").document(code)
     doc = doc_ref.get()
 
     if not doc.exists:
         raise HTTPException(status_code=404, detail="Shortened URL not found")
-    
+
     # Store visit details
     visit_data = {
         "timestamp": firestore.SERVER_TIMESTAMP,

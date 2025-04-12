@@ -4,60 +4,70 @@ from pydantic import BaseModel, HttpUrl
 from typing import Union
 from services.utils import get_hash, get_salt
 from database.firebase import db
+from services.utils import log_api_call
 
 router = APIRouter()
 
+
 @router.get("/{code}/salt")
 async def fetch_salt(code: str):
+    log_api_call("fetch_salt", code)
     """Fetch the salt for the shortened URL."""
     salt = get_salt(code)
     if not salt:
         return {"salt": None}
     return {"salt": salt}
 
+
 @router.get("/{code}/hash")
 async def fetch_hash(code: str):
+    log_api_call("fetch_hash", code)
     """Fetch the password hash for the shortened URL."""
     password_hash = get_hash(code)
     if not password_hash:
         return {"password_hash": None}
     return {"password_hash": password_hash}
 
+
 @router.get("/{code}/url")
 async def fetch_url(code: str):
+    log_api_call("fetch_url", code)
     """Fetch the original URL associated with the shortened URL."""
     doc = db.collection("urls").document(code).get()
     if not doc.exists:
         raise HTTPException(status_code=404, detail="Shortened URL not found")
-    
+
     original_url = doc.to_dict().get("original_url")
     if not original_url:
         raise HTTPException(status_code=404, detail="Original URL not found")
-    
+
     return {"url": original_url}
 
 
 # TODO: figure out where to store images, and update this path
 pdf_path = "temp"
 
+
 @router.get("/{code}/get")
 async def get_pdf(code: str):
+    log_api_call("get_pdf", code)
     """Retrieve the base PDF associated with the shortened URL."""
     doc = db.collection("urls").document(code).get
     if not doc.exists:
         raise HTTPException(status_code=404, detail="Shortened URL not found")
-    
+
     # TODO: update ref with where image is stored
     pdf_ref = pdf_path + code + ".pdf"
 
     if not pdf_ref:
-        raise HTTPException(status_code=404, detail="PDF not found") 
+        raise HTTPException(status_code=404, detail="PDF not found")
 
     return FileResponse(pdf_ref, media_type="application/pdf", filename=f"{code}.pdf")
 
 
 @router.get("/{code}/set")
 async def set_pdf(code: str):
+    log_api_call("set_pdf", code)
     """Upload a PDF to be associated with the shortened URL."""
     doc = db.collection("urls").document(code).get
 
@@ -68,12 +78,13 @@ async def set_pdf(code: str):
     pdf_ref = pdf_path + code + ".pdf"
 
     if not pdf_ref:
-        raise HTTPException(status_code=404, detail="PDF not found") 
+        raise HTTPException(status_code=404, detail="PDF not found")
 
     # TODO: store the file in whichever service we decide on,
     #  and store location of file in firebase
 
     return {"message": "PDF uploaded successfully", "pdf_url": f"/{code}/get"}
+
 
 class AnnotationBase(BaseModel):
     id: int
@@ -86,11 +97,15 @@ class AnnotationBase(BaseModel):
     required: bool = False
 
 # Text annotation
+
+
 class TextAnnotation(AnnotationBase):
     type: str = "text"
     text: str
 
 # Signature annotation
+
+
 class SignatureAnnotation(AnnotationBase):
     type: str = "signature"
     file: str = None
@@ -99,6 +114,8 @@ class SignatureAnnotation(AnnotationBase):
     naturalHeight: int
 
 # Image annotation
+
+
 class ImageAnnotation(AnnotationBase):
     type: str = "image"
     file: str = None
@@ -107,16 +124,21 @@ class ImageAnnotation(AnnotationBase):
     naturalHeight: int
 
 # Checkbox annotation
+
+
 class CheckboxAnnotation(AnnotationBase):
     type: str = "checkbox"
     checked: bool = False
 
+
 # Union type to allow multiple annotation types
-AnnotationTypes = Union[TextAnnotation, SignatureAnnotation, ImageAnnotation, CheckboxAnnotation]
+AnnotationTypes = Union[TextAnnotation,
+                        SignatureAnnotation, ImageAnnotation, CheckboxAnnotation]
 
 
 @router.get("/{code}/annotate")
 async def annotate(code: str, annotation: AnnotationTypes):
+    log_api_call("annotate", code)
     if annotation.type in ["signature", "image"]:
         # TODO:
         # - store image in some service
@@ -130,11 +152,12 @@ async def annotate(code: str, annotation: AnnotationTypes):
         annotation_data = annotation.model_dump()
         annotation_id = str(annotation_data.pop(("id")))
 
-        doc_ref = db.collection("urls").document(code).collection("annotations").document(annotation_id)
-        
+        doc_ref = db.collection("urls").document(code).collection(
+            "annotations").document(annotation_id)
+
         if doc_ref.get().exists:
             return HTTPException(status_code=400, detail="Annotation already exists")
-        
+
         doc_ref.set(annotation.data)
 
     return {"message": "Annotation saved", "annotation": annotation}

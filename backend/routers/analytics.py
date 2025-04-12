@@ -2,16 +2,20 @@ from fastapi import APIRouter, HTTPException
 from database.firebase import db
 from collections import defaultdict
 from user_agents import parse
+from services.utils import log_api_call
 
 router = APIRouter()
+
+
 @router.get("/{uid}/urls")
 async def get_user_urls(uid: str):
+    log_api_call("get_user_urls", uid)
     user_ref = db.collection("users").document(uid)
     user_doc = user_ref.get()
 
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     urls_ref = user_ref.collection("urls")
     docs = urls_ref.stream()
 
@@ -22,8 +26,10 @@ async def get_user_urls(uid: str):
 
     return {"groups": urls_dict}
 
+
 @router.get("/{code}/referrers")
 async def get_refferer_counts(code: str):
+    log_api_call("get_refferer_counts", code)
     """Get a dictionary of all referrers and their counts."""
     visits_ref = db.collection("urls").document(code).collection("visits")
     visits = visits_ref.stream()
@@ -36,8 +42,10 @@ async def get_refferer_counts(code: str):
 
     return {"referrers": dict(referrer_counts)}
 
+
 @router.get("/{code}/access-dates")
 async def get_access_dates(code: str):
+    log_api_call("get_access_dates", str)
     """Get a dictionary of all access dates and their counts."""
     visits_ref = db.collection("urls").document(code).collection("visits")
     visits = visits_ref.stream()
@@ -52,8 +60,10 @@ async def get_access_dates(code: str):
 
     return {"access_dates": dict(date_counts)}
 
+
 @router.get("/{code}/hourly-patterns")
 async def get_hourly_access_patterns(code: str):
+    log_api_call("get_hourly_access_patterns", code)
     """Get a dictionary of hourly access patterns."""
     visits_ref = db.collection("urls").document(code).collection("visits")
     visits = visits_ref.stream()
@@ -68,8 +78,10 @@ async def get_hourly_access_patterns(code: str):
 
     return {"hourly_patterns": dict(hourly_counts)}
 
+
 @router.get("/{code}/ip-addresses")
 async def get_ip_address_counts(code: str):
+    log_api_call("get_ip_address_counts", code)
     """Get a dictionary of IP addresses and their counts."""
     visits_ref = db.collection("urls").document(code).collection("visits")
     visits = visits_ref.stream()
@@ -82,8 +94,10 @@ async def get_ip_address_counts(code: str):
 
     return {"ip_addresses": dict(ip_counts)}
 
+
 @router.get("/{code}/unique-visitors")
 async def get_unique_visitors(code: str):
+    log_api_call("get_unique_visitors", code)
     """Get the count of unique visitors based on IP addresses."""
     visits_ref = db.collection("urls").document(code).collection("visits")
     visits = visits_ref.stream()
@@ -97,8 +111,10 @@ async def get_unique_visitors(code: str):
 
     return {"unique_visitors": len(unique_ips)}
 
+
 @router.get("/{code}/referrer-sources")
 async def get_referrer_sources(code: str):
+    log_api_call("get_referrer_sources", code)
     """Get a breakdown of referrer sources."""
     visits_ref = db.collection("urls").document(code).collection("visits")
     visits = visits_ref.stream()
@@ -111,8 +127,10 @@ async def get_referrer_sources(code: str):
 
     return {"referrer_sources": dict(referrer_counts)}
 
+
 @router.get("/{code}/user-agents")
 async def get_user_agent_counts(code: str):
+    log_api_call("get_user_agent_counts", code)
     """Get a dictionary of user agents and their counts."""
     visits_ref = db.collection("urls").document(code).collection("visits")
     visits = visits_ref.stream()
@@ -125,8 +143,10 @@ async def get_user_agent_counts(code: str):
 
     return {"user_agents": dict(user_agent_counts)}
 
+
 @router.get("/{code}/timezones")
 async def get_timezone_counts(code: str):
+    log_api_call("get_timezone_counts", code)
     """Get a dictionary of timezones and their counts."""
     visits_ref = db.collection("urls").document(code).collection("visits")
     visits = visits_ref.stream()
@@ -141,8 +161,10 @@ async def get_timezone_counts(code: str):
 
     return {"timezones": dict(timezone_counts)}
 
+
 @router.get("/{code}/browser-os")
 async def get_browser_os_breakdown(code: str):
+    log_api_call("get_browser_os_breakdown", code)
     """Get a breakdown of browsers and operating systems."""
     visits_ref = db.collection("urls").document(code).collection("visits")
     visits = visits_ref.stream()
