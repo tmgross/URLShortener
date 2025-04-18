@@ -157,3 +157,53 @@ async def get_browser_os_breakdown(code: str):
         os_counts[parsed_ua.os.family] += 1
 
     return {"browsers": dict(browser_counts), "operating_systems": dict(os_counts)}
+
+@router.get("/{code}/full-analytics")
+async def get_full_analytics(code: str):
+    """Get a full analytics summary for a given shortened URL code."""
+    url_doc_ref = db.collection("urls").document(code)
+    url_doc = url_doc_ref.get()
+
+    if not url_doc.exists:
+        raise HTTPException(status_code=404, detail="Shortened URL not found")
+
+    visits_ref = url_doc_ref.collection("visits")
+    visits = visits_ref.stream()
+
+    referrer_counts = defaultdict(int)
+    date_counts = defaultdict(int)
+    hourly_counts = defaultdict(int)
+    unique_ips = set()
+
+    for visit in visits:
+        data = visit.to_dict()
+
+        # Referrer counts
+        referrer = data.get("referrer", "Direct")
+        referrer_counts[referrer] += 1
+
+        # Access dates
+        timestamp = data.get("timestamp")
+        if timestamp:
+            date = timestamp.strftime("%Y-%m-%d")
+            date_counts[date] += 1
+
+            # Hourly pattern
+            hour = timestamp.strftime("%H")
+            hourly_counts[hour] += 1
+
+        # Unique visitors by IP
+        ip = data.get("ip")
+        if ip:
+            unique_ips.add(ip)
+
+    # Original long URL
+    original_url = url_doc.to_dict().get("original_url")
+
+    return {
+        "referrers": dict(referrer_counts),
+        "access_dates": dict(date_counts),
+        "unique_visitors": len(unique_ips),
+        "hourly_patterns": dict(hourly_counts),
+        "original_url": original_url,
+    }
